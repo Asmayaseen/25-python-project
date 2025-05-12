@@ -1,24 +1,23 @@
 import streamlit as st
 import numpy as np
 
+# Page Config
 st.set_page_config(page_title="Sudoku Solver 🧩", layout="centered")
 st.title("Sudoku Solver 🧩")
-st.write("Enter your Sudoku puzzle and let the solver do its magic! ✨")
+st.markdown("Enter your Sudoku puzzle and let the solver do its magic! ✨")
 
+# Sudoku Solver Functions
 def is_valid(board, num, pos):
     # Check row
-    for i in range(9):
-        if board[pos[0]][i] == num and pos[1] != i:
-            return False
+    if num in board[pos[0]] and board[pos[0]].index(num) != pos[1]:
+        return False
 
     # Check column
-    for i in range(9):
-        if board[i][pos[1]] == num and pos[0] != i:
-            return False
+    if num in [board[i][pos[1]] for i in range(9) if i != pos[0]]:
+        return False
 
     # Check 3x3 box
-    box_x = pos[1] // 3
-    box_y = pos[0] // 3
+    box_x, box_y = pos[1] // 3, pos[0] // 3
     for i in range(box_y * 3, box_y * 3 + 3):
         for j in range(box_x * 3, box_x * 3 + 3):
             if board[i][j] == num and (i, j) != pos:
@@ -38,9 +37,9 @@ def solve(board):
         return True
     row, col = empty
 
-    for i in range(1, 10):
-        if is_valid(board, i, (row, col)):
-            board[row][col] = i
+    for num in range(1, 10):
+        if is_valid(board, num, (row, col)):
+            board[row][col] = num
             if solve(board):
                 return True
             board[row][col] = 0
@@ -59,26 +58,36 @@ def display_board(board):
         board_str += "\n"
     return board_str
 
-st.write("Use 0 for empty cells")
+# UI Improvements
+st.markdown("### Enter your Sudoku Puzzle (Use **0** for empty cells)")
 
-# Input Grid
-board = []
-st.write("### Enter your Sudoku Puzzle:")
-
-cols = [st.columns(9) for _ in range(9)]
+# Create a 9x9 grid using st.columns
+cols = st.columns(9)
+board = [[0 for _ in range(9)] for _ in range(9)]
 
 for i in range(9):
-    row = []
     for j in range(9):
-        cell = cols[i][j].number_input(f"{i+1},{j+1}", min_value=0, max_value=9, value=0, step=1)
-        row.append(cell)
-    board.append(row)
+        with cols[j]:
+            board[i][j] = st.number_input(
+                f"Row {i+1}, Col {j+1}",
+                min_value=0,
+                max_value=9,
+                value=0,
+                key=f"cell_{i}_{j}",
+                step=1
+            )
 
-if st.button("Solve Puzzle 🧩"):
+# Solve Button
+if st.button("Solve Puzzle 🧩", type="primary"):
     if solve(board):
-        st.success("Puzzle Solved! 🎉")
+        st.success("✅ Puzzle Solved! 🎉")
         st.code(display_board(board))
     else:
-        st.error("No solution exists! 🚫")
+        st.error("❌ No solution exists! 🚫")
 
-st.write("Good luck solving more puzzles! 💡")
+st.markdown("---")
+st.markdown("### How to Use?")
+st.markdown("1. Enter numbers (1-9) in the grid.")
+st.markdown("2. Use **0** for empty cells.")
+st.markdown("3. Click **Solve Puzzle** button.")
+st.markdown("4. Enjoy the solution! 😊")

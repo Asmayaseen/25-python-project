@@ -1,5 +1,4 @@
 import streamlit as st
-import numpy as np
 import random
 import time
 
@@ -11,13 +10,13 @@ background_emoji = "⬛"
 # Game Variables
 width, height = 20, 20
 snake_speed = 0.3
-score = 0
 
 def initialize_game():
     st.session_state.snake = [[10, 10]]
     st.session_state.direction = "RIGHT"
     st.session_state.food = [random.randint(0, width-1), random.randint(0, height-1)]
     st.session_state.score = 0
+    st.session_state.game_active = True
 
 if 'snake' not in st.session_state:
     initialize_game()
@@ -31,11 +30,6 @@ snake_speed = st.slider('Select Speed (Lower is faster)', 0.1, 1.0, 0.3)
 
 # Score Display
 st.write(f"**Score:** {st.session_state.score}")
-
-# Restart Button
-if st.button('🔄 Restart Game'):
-    initialize_game()
-    st.rerun()
 
 # Controls
 col1, col2, col3 = st.columns(3)
@@ -51,6 +45,11 @@ with col3:
     if st.button('⬇️ Down') and st.session_state.direction != "UP":
         st.session_state.direction = "DOWN"
 
+# Restart Button
+if st.button('🔄 Restart Game'):
+    initialize_game()
+    st.rerun()
+
 # Game Board Drawing
 def draw_board():
     board = [[background_emoji for _ in range(width)] for _ in range(height)]
@@ -62,6 +61,9 @@ def draw_board():
 
 # Snake Movement
 def move_snake():
+    if not st.session_state.game_active:
+        return False
+        
     head = st.session_state.snake[-1][:]
 
     if st.session_state.direction == "UP":
@@ -73,9 +75,14 @@ def move_snake():
     elif st.session_state.direction == "RIGHT":
         head[0] += 1
 
-    # Collision check
-    if head in st.session_state.snake or head[0] < 0 or head[1] < 0 or head[0] >= width or head[1] >= height:
-        st.error('Game Over! 🥲 Your Score: ' + str(st.session_state.score))
+    # Wall collision check
+    if head[0] < 0 or head[1] < 0 or head[0] >= width or head[1] >= height:
+        st.session_state.game_active = False
+        return False
+
+    # Self collision check
+    if head in st.session_state.snake:
+        st.session_state.game_active = False
         return False
 
     st.session_state.snake.append(head)
@@ -83,14 +90,25 @@ def move_snake():
     # Food Check
     if head == st.session_state.food:
         st.session_state.score += 1
-        st.session_state.food = [random.randint(0, width-1), random.randint(0, height-1)]
+        while True:
+            new_food = [random.randint(0, width-1), random.randint(0, height-1)]
+            if new_food not in st.session_state.snake:
+                st.session_state.food = new_food
+                break
     else:
         st.session_state.snake.pop(0)
 
     return True
 
-# Game Loop
-if move_snake():
+# Main Game Display
+if st.session_state.game_active:
+    if move_snake():
+        st.write(draw_board())
+        time.sleep(snake_speed)
+        st.rerun()
+else:
+    st.error(f'Game Over! 🥲 Your Score: {st.session_state.score}')
     st.write(draw_board())
-    time.sleep(snake_speed)
-    st.rerun()
+    if st.button('🎮 Play Again'):
+        initialize_game()
+        st.rerun()
