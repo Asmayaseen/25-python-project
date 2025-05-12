@@ -1,4 +1,4 @@
-import streamlit as st
+import streamlit as st # type: ignore
 import subprocess
 import os
 
@@ -15,18 +15,21 @@ def stop_bot():
         st.session_state.process.terminate()
         st.session_state.running = False
 
-# UI
+# Streamlit UI
 st.title('🤖 Discord Bot Manager')
 st.write('Start or stop your Discord bot using this interface.')
 
 bot_token = st.text_input("Enter your Discord Bot Token:", type="password")
 
 if st.button("Save Token"):
-    write_env_variable(bot_token)
-    st.success("Token saved successfully!")
+    if bot_token.strip():
+        write_env_variable(bot_token)
+        st.success("Token saved successfully!")
+    else:
+        st.error("Token cannot be empty!")
 
 if st.button("Start Bot"):
-    if bot_token:
+    if bot_token.strip():
         run_bot()
         st.success("Bot started!")
     else:
